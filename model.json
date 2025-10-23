@@ -1,0 +1,110 @@
+{
+  "name": "Drivetrain Model Conversion",
+  "date": "2025-10-13T11:28:46.000000Z",
+  "components": [
+    {
+      "name": "Motor_Component",
+      "elements": [
+        {
+          "name": "Motor",
+          "type": "Disk",
+          "index": 0,
+          "inertia": 2.5,
+          "damping": 15.0,
+          "stiffness": 0.0,
+          "excitation": {
+            "type": "excitationValuesRpmAbsolute",
+            "values": [
+              [300.0, 600.0],
+              [350.0, 600.0],
+              [400.0, 600.0],
+              [450.0, 600.0],
+              [500.0, 600.0],
+              [550.0, 600.0],
+              [600.0, 600.0],
+              [650.0, 600.0],
+              [700.0, 600.0],
+              [750.0, 600.0],
+              [800.0, 600.0],
+              [850.0, 600.0],
+              [900.0, 600.0],
+              [950.0, 600.0],
+              [1000.0, 600.0],
+              [1050.0, 600.0],
+              [1100.0, 600.0],
+              [1150.0, 600.0],
+              [1200.0, 600.0],
+              [1250.0, 600.0],
+              [1300.0, 600.0],
+              [1350.0, 600.0],
+              [1400.0, 600.0],
+              [1450.0, 600.0],
+              [1500.0, 600.0]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Coupling_Pinion_Component",
+      "elements": [
+        {
+          "name": "Coupling_Pinion",
+          "type": "ShaftDiscrete",
+          "index": 1,
+          "inertia": 0.45,
+          "damping": 1206.0,
+          "stiffness": 2200000.0,
+          "gear_radius": 25.0
+        }
+      ]
+    },
+    {
+      "name": "Bullgear_Output_Component",
+      "elements": [
+        {
+          "name": "Bullgear_Output",
+          "type": "Disk",
+          "index": 2,
+          "inertia": 0.87,
+          "damping": 8.0,
+          "stiffness": 0.0,
+          "gear_radius": 75.0,
+          "parent_gear": "Coupling_Pinion"
+        }
+      ]
+    },
+    {
+      "name": "Propeller_Component",
+      "elements": [
+        {
+          "name": "Propeller",
+          "type": "ShaftDiscrete",
+          "index": 3,
+          "inertia": 18.0,
+          "damping": 995.0,
+          "stiffness": 900000.0
+        }
+      ]
+    }
+  ],
+  "structure": [
+    [
+      "Motor_Component.Motor",
+      "Coupling_Pinion_Component.Coupling_Pinion"
+    ],
+    [
+      "Coupling_Pinion_Component.Coupling_Pinion",
+      "Bullgear_Output_Component.Bullgear_Output"
+    ],
+    [
+      "Bullgear_Output_Component.Bullgear_Output",
+      "Propeller_Component.Propeller"
+    ]
+  ],
+  "frequency_sweep": {
+    "start": 300.0,
+    "stop": 1500.0,
+    "points": 25
+  }
+}
