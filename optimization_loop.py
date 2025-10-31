@@ -311,24 +311,45 @@ def main():
 
     print(f"\nAll results saved to: {RESULTS_FILE}")
 
-    # Display top 5
+    # Separate passing and failing couplings
+    passing = [r for r in results_sorted if r['max_vibratory_torque_nm'] < r['continuous_vibratory_torque_limit_nm']]
+    failing = [r for r in results_sorted if r['max_vibratory_torque_nm'] >= r['continuous_vibratory_torque_limit_nm']]
+
+    # Display summary
     print("\n" + "="*70)
-    print("TOP 5 BEST COUPLINGS (Lowest Vibratory Torque)")
+    print("OPTIMIZATION SUMMARY")
     print("="*70)
+    print(f"Total couplings analyzed: {len(results)}")
+    print(f"✓ Couplings that PASS all limits: {len(passing)}")
+    print(f"✗ Couplings that FAIL limits: {len(failing)}")
 
-    for i, result in enumerate(results_sorted[:5], 1):
-        print(f"\n{i}. {result['coupling_family']} ({result['option']})")
-        print(f"   Size: {result['coupling_size']}, Type: {result['coupling_type']}")
-        print(f"   Stiffness: {result['stiffness']:.0f} N·m/rad, Damping: {result['damping']}")
-        print(f"   Max Vibratory Torque: {result['max_vibratory_torque_nm']:.2f} Nm")
-        print(f"   Limit: {result['continuous_vibratory_torque_limit_nm']:.0f} Nm")
+    # Display top 5 passing couplings
+    if passing:
+        print("\n" + "="*70)
+        print("TOP 5 BEST COUPLINGS (Pass All Limits)")
+        print("="*70)
 
-        # Check if within limits
-        if result['max_vibratory_torque_nm'] < result['continuous_vibratory_torque_limit_nm']:
+        for i, result in enumerate(passing[:5], 1):
             margin = (1 - result['max_vibratory_torque_nm'] / result['continuous_vibratory_torque_limit_nm']) * 100
+            print(f"\n{i}. {result['coupling_family']} ({result['option']})")
+            print(f"   Size: {result['coupling_size']}, Type: {result['coupling_type']}")
+            print(f"   Stiffness: {result['stiffness']:.0f} N·m/rad, Damping: {result['damping']}")
+            print(f"   Max Vibratory Torque: {result['max_vibratory_torque_nm']:.2f} Nm")
+            print(f"   Limit: {result['continuous_vibratory_torque_limit_nm']:.0f} Nm")
             print(f"   Status: ✓ PASS (Safety margin: {margin:.1f}%)")
-        else:
-            print(f"   Status: ✗ EXCEEDS LIMIT")
+    else:
+        print("\n" + "="*70)
+        print("NO COUPLINGS MEET ALL REQUIREMENTS")
+        print("="*70)
+        print("\nTop 5 closest to passing (lowest vibratory torque):")
+
+        for i, result in enumerate(results_sorted[:5], 1):
+            excess = result['max_vibratory_torque_nm'] - result['continuous_vibratory_torque_limit_nm']
+            excess_pct = (result['max_vibratory_torque_nm'] / result['continuous_vibratory_torque_limit_nm'] - 1) * 100
+            print(f"\n{i}. {result['coupling_family']} ({result['option']})")
+            print(f"   Size: {result['coupling_size']}, Type: {result['coupling_type']}")
+            print(f"   Max VT: {result['max_vibratory_torque_nm']:.2f} Nm / Limit: {result['continuous_vibratory_torque_limit_nm']:.0f} Nm")
+            print(f"   Status: ✗ EXCEEDS by {excess:.2f} Nm ({excess_pct:.1f}%)")
 
     print("\n" + "="*70)
     print("Optimization complete!")
