@@ -1,5 +1,5 @@
 {
-  "name": "Drivetrain System Template",
+  "name": "Drivetrain System Template - Small-Scale Testbench",
   "date": "2025-10-13T12:00:00.000000Z",
   "components": [
     {
@@ -9,114 +9,29 @@
           "name": "Motor",
           "type": "Disk",
           "index": 0,
-          "inertia": 2.5,
-          "damping": 15.0,
+          "inertia": 0.000794,
+          "damping": 0.003,
           "stiffness": 0.0,
           "excitation": {
-            "type": "excitationValuesRpmAbsolute",
+            "type": "excitationHarmonic",
             "values": [
               [
-                300.0,
-                600.0
+                6,
+                100.0
               ],
               [
-                350.0,
-                600.0
-              ],
-              [
-                400.0,
-                600.0
-              ],
-              [
-                450.0,
-                600.0
-              ],
-              [
-                500.0,
-                600.0
-              ],
-              [
-                550.0,
-                600.0
-              ],
-              [
-                600.0,
-                600.0
-              ],
-              [
-                650.0,
-                600.0
-              ],
-              [
-                700.0,
-                600.0
-              ],
-              [
-                750.0,
-                600.0
-              ],
-              [
-                800.0,
-                600.0
-              ],
-              [
-                850.0,
-                600.0
-              ],
-              [
-                900.0,
-                600.0
-              ],
-              [
-                950.0,
-                600.0
-              ],
-              [
-                1000.0,
-                600.0
-              ],
-              [
-                1050.0,
-                600.0
-              ],
-              [
-                1100.0,
-                600.0
-              ],
-              [
-                1150.0,
-                600.0
-              ],
-              [
-                1200.0,
-                600.0
-              ],
-              [
-                1250.0,
-                600.0
-              ],
-              [
-                1300.0,
-                600.0
-              ],
-              [
-                1350.0,
-                600.0
-              ],
-              [
-                1400.0,
-                600.0
-              ],
-              [
-                1450.0,
-                600.0
-              ],
-              [
-                1500.0,
-                600.0
+                12,
+                50.0
               ]
             ]
           }
+        },
+        {
+          "name": "Motor_Shaft_Element",
+          "type": "ShaftDiscrete",
+          "inertia": 0.0,
+          "damping": 8.08,
+          "stiffness": 190000.0
         }
       ]
     },
@@ -124,22 +39,23 @@
       "name": "Coupling_Component",
       "elements": [
         {
-          "name": "Replaceable_Coupling",
-          "type": "ShaftDiscrete",
+          "name": "Coupling_Hub1",
+          "type": "Disk",
           "index": 1,
           "inertia": 0.0015,
-          "damping": 1.0,
-          "stiffness": 3400.0,
-          "gear_radius": 25.0,
+          "damping": 0.0,
+          "stiffness": 0.0,
+          "mass": 0.5,
           "coupling_option_name": "shore60",
           "coupling_family": "CENTAFLEX-A",
           "coupling_type": "Type 0",
-          "coupling_size": 16,
-          "inertia_1": 0.0015,
-          "mass_1": 0.5,
-          "inertia_2": 0.0014,
-          "mass_2": 0.4,
-          "maxSpeed": 6000.0,
+          "coupling_size": 16
+        },
+        {
+          "name": "Coupling_FlexElement",
+          "type": "ShaftDiscrete",
+          "damping": 1.0,
+          "stiffness": 3400.0,
           "shoreHardness": 60,
           "nominalTorque": 200.0,
           "maxTorque": 560.0,
@@ -151,6 +67,17 @@
           "radialStiffness": 0.6,
           "permissibleAngularDisplacement": 3.0,
           "angularStiffness": 0.019
+        },
+        {
+          "name": "Coupling_Hub2",
+          "type": "Disk",
+          "index": 2,
+          "inertia": 0.0014,
+          "damping": 0.0,
+          "stiffness": 0.0,
+          "mass": 0.4,
+          "gear_radius": 25.0,
+          "maxSpeed": 6000.0
         }
       ]
     },
@@ -160,12 +87,12 @@
         {
           "name": "Bullgear_Output",
           "type": "Disk",
-          "index": 2,
-          "inertia": 0.87,
+          "index": 3,
+          "inertia": 0.000269,
           "damping": 8.0,
           "stiffness": 0.0,
           "gear_radius": 75.0,
-          "parent_gear": "Replaceable_Coupling"
+          "parent_gear_node": 2
         }
       ]
     },
@@ -173,33 +100,55 @@
       "name": "Propeller_Component",
       "elements": [
         {
-          "name": "Propeller",
+          "name": "Propeller_Shaft_Element",
           "type": "ShaftDiscrete",
-          "index": 3,
-          "inertia": 18.0,
-          "damping": 995.0,
-          "stiffness": 900000.0
+          "inertia": 0.0,
+          "damping": 0.52,
+          "stiffness": 12200.0
+        },
+        {
+          "name": "Propeller_Disk",
+          "type": "Disk",
+          "index": 4,
+          "inertia": 0.00495,
+          "damping": 0.24,
+          "stiffness": 0.0
         }
       ]
     }
   ],
   "structure": [
-    [
-      "Motor_Component.Motor",
-      "Coupling_Component.Replaceable_Coupling"
-    ],
-    [
-      "Coupling_Component.Replaceable_Coupling",
-      "Bullgear_Output_Component.Bullgear_Output"
-    ],
-    [
-      "Bullgear_Output_Component.Bullgear_Output",
-      "Propeller_Component.Propeller"
-    ]
+    {
+      "name": "Motor_Shaft",
+      "nodes": [
+        0,
+        1
+      ],
+      "type": "ShaftFromElement",
+      "element_name": "Motor_Component.Motor_Shaft_Element"
+    },
+    {
+      "name": "Coupling_FlexElement_Shaft",
+      "nodes": [
+        1,
+        2
+      ],
+      "type": "ShaftFromElement",
+      "element_name": "Coupling_Component.Coupling_FlexElement"
+    },
+    {
+      "name": "Propeller_Shaft",
+      "nodes": [
+        3,
+        4
+      ],
+      "type": "ShaftFromElement",
+      "element_name": "Propeller_Component.Propeller_Shaft_Element"
+    }
   ],
   "frequency_sweep": {
-    "start": 300.0,
-    "stop": 1500.0,
-    "points": 25
+    "start": 1.0,
+    "stop": 100.0,
+    "points": 100
   }
 }

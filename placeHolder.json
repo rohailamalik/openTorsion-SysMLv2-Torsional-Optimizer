@@ -1,5 +1,5 @@
 {
-  "name": "Drivetrain System Template",
+  "name": "Drivetrain System Template - Small-Scale Testbench",
   "date": "2025-10-13T12:00:00.000000Z",
   "components": [
     {
@@ -9,16 +9,29 @@
           "name": "Motor",
           "type": "Disk",
           "index": 0,
-          "inertia": 2.5,
-          "damping": 15.0,
+          "inertia": 0.000794,
+          "damping": 0.0030,
           "stiffness": 0.0,
           "excitation": {
             "type": "excitationHarmonic",
             "values": [
-              [ 6, 100.0 ],
-              [ 12, 50.0 ]
+              [
+                6,
+                100.0
+              ],
+              [
+                12,
+                50.0
+              ]
             ]
           }
+        },
+        {
+        "name": "Motor_Shaft_Element",
+        "type": "ShaftDiscrete",
+        "inertia": 0.0,
+        "damping": 8.08,
+        "stiffness": 190000.0
         }
       ]
     },
@@ -34,7 +47,7 @@
           "name": "Bullgear_Output",
           "type": "Disk",
           "index": 3,
-          "inertia": 0.87,
+          "inertia": 0.000269,
           "damping": 8.0,
           "stiffness": 0.0,
           "gear_radius": 75.0,
@@ -49,15 +62,15 @@
           "name": "Propeller_Shaft_Element",
           "type": "ShaftDiscrete",
           "inertia": 0.0,
-          "damping": 995.0,
-          "stiffness": 900000.0
+          "damping": 0.52,
+          "stiffness": 12200.0
         },
         {
           "name": "Propeller_Disk",
           "type": "Disk",
           "index": 4,
-          "inertia": 18.0,
-          "damping": 0.0,
+          "inertia": 0.00495,
+          "damping": 0.24,
           "stiffness": 0.0
         }
       ]
@@ -66,14 +79,17 @@
   "structure": [
     {
       "name": "Propeller_Shaft",
-      "nodes": [ 3, 4 ],
+      "nodes": [
+        3,
+        4
+      ],
       "type": "ShaftFromElement",
       "element_name": "Propeller_Component.Propeller_Shaft_Element"
     }
   ],
   "frequency_sweep": {
-    "start": 300.0,
-    "stop": 1500.0,
+    "start": 1.0,
+    "stop": 100.0,
     "points": 100
   }
 }

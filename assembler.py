@@ -97,12 +97,13 @@ def assemble_system(template_path, coupling_data, coupling_option, output_path):
     coupling_component['elements'] = [hub1_disk, flexible_element, hub2_disk]
     
     # 5. Add the new shaft connections to the 'structure' list
-    
-    # Motor (0) --rigid-shaft--> Hub1 (1)
+
+    # Motor (0) --motor-shaft--> Hub1 (1)
     motor_shaft = {
-      "name": "Motor_Shaft_(Rigid)",
+      "name": "Motor_Shaft",
       "nodes": [ 0, 1 ],
-      "type": "ShaftRigid"
+      "type": "ShaftFromElement",
+      "element_name": "Motor_Component.Motor_Shaft_Element"
     }
     
     # Hub1 (1) --flex-element--> Hub2 (2)
