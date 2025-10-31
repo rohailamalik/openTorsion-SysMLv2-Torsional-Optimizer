@@ -22,7 +22,7 @@ def assemble_system(template_path, coupling_data, coupling_option, output_path):
 
     # 2. Extract properties from the coupling data and selected option
     coupling_name = coupling_option.get("name")
-    stiffness = coupling_option.get("torsionalStiffness")
+    stiffness = coupling_option.get("torsionalStiffness") * 1000  # Convert kN·m/rad to N·m/rad
     damping = coupling_option.get("relativeDamping")
     
     # Extract family-level properties
