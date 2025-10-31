@@ -89,7 +89,7 @@
   ],
   "frequency_sweep": {
     "start": 1.0,
-    "stop": 100.0,
-    "points": 100
+    "stop": 2000.0,
+    "points": 200
   }
 }
