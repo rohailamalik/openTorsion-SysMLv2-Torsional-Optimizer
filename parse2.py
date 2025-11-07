@@ -6,15 +6,12 @@ import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'openTorsion'))
-# --- CORRECTED IMPORTS ---
-# We must import each element class from its specific module
 from opentorsion.assembly import Assembly
 from opentorsion.plots import Plots
 from opentorsion.elements.disk_element import Disk
 from opentorsion.elements.shaft_element import Shaft
 from opentorsion.elements.gear_element import Gear
 from opentorsion.excitation import PeriodicExcitation
-# --- END CORRECTIONS ---
 
 def parse_system_json_v2(input_data: dict):
     """
@@ -144,10 +141,19 @@ if __name__ == "__main__":
     # Display the assembly
     # --- FIX: Use correct class 'Plots' ---
     plot_tools = Plots(assembly)
+
+    # Temporarily disable plt.show() to prevent figure from being cleared
+    old_show = plt.show
+    plt.show = lambda: None
+
     plot_tools.plot_assembly()
     plt.title("System Assembly (5 Nodes)")
     plt.savefig('assembly_plot.png', dpi=150, bbox_inches='tight')
     print("\nSaved assembly plot to 'assembly_plot.png'")
+
+    # Restore plt.show() and close the figure
+    plt.show = old_show
+    plt.close()
 
     # Extract frequency sweep configuration
     if 'frequency_sweep' in input_data:
@@ -218,7 +224,7 @@ if __name__ == "__main__":
                 _, T_vib_sum = assembly.vibratory_torque(excitation, C=C)
                 VT_sum_result[:, i] = np.ravel(T_vib_sum)
 
-        # --- Plot Forced Response ---
+        # --- Plot Forced Response (Custom Plot) ---
         print(f"  Max vibratory torque: {np.max(np.abs(VT_sum_result)/1000):.2f} kNm")
         plt.figure(figsize=(10, 6))
         for i in range(VT_sum_result.shape[0]):
@@ -231,8 +237,18 @@ if __name__ == "__main__":
         plt.legend()
         plt.grid(True)
         plt.savefig(output_file, dpi=150, bbox_inches='tight')
-        plt.show()
+        plt.close()
         print(f"  Saved forced response plot to '{output_file}'")
+
+        # --- Plot Torque Response (Using openTorsion's built-in method) ---
+        print("\n  Generating torque response plot using openTorsion method...")
+        plt.figure(figsize=(10, 8))
+        plt.show = lambda: None
+        plot_tools.torque_response_plot(rpm_sweep, np.abs(VT_sum_result), show_plot=False)
+        plt.savefig('torque_response_plot.png', dpi=150, bbox_inches='tight')
+        plt.show = old_show
+        plt.close()
+        print(f"  Saved torque response plot to 'torque_response_plot.png'")
 
 
         # --- Generate Campbell Diagram ---
@@ -241,29 +257,69 @@ if __name__ == "__main__":
         print("="*60)
 
         rpm_range = [rpm_start, rpm_stop]
-        
+
+        # Calculate how many physical modes we have (excluding rigid body and numerical artifacts)
+        # Only include modes below 10 kHz (anything above is likely from rigid connections)
+        wn_temp, _, _ = assembly.modal_analysis()
+        physical_modes_hz = wn_temp[wn_temp > 1e-3] / (2 * np.pi)
+        physical_modes_hz = physical_modes_hz[physical_modes_hz < 10000]  # Filter out >10kHz modes
+        num_physical_modes = len(physical_modes_hz)
+
+        print(f"  Found {num_physical_modes} physical modes (< 10 kHz)")
+
+        # Use fewer modes to avoid plotting numerical artifacts
+        # Note: plot_campbell uses [::2][1:num_modes], so we need to account for this
+        num_modes_to_plot = min(3, num_physical_modes // 2 + 1)
+
+        # Temporarily disable plt.show() to prevent figure from being cleared
+        plt.show = lambda: None
+
         plot_tools.plot_campbell(
             frequency_range_rpm=rpm_range,
-            num_modes=5,
+            num_modes=num_modes_to_plot,
             harmonics=plotted_harmonics,
             operating_speeds_rpm=[]
         )
         plt.title("Campbell Diagram")
         plt.savefig('campbell_diagram.png', dpi=150, bbox_inches='tight')
-        plt.show()
+
+        # Restore plt.show() and close the figure
+        plt.show = old_show
+        plt.close()
 
         print(f"  Campbell diagram generated and saved to 'campbell_diagram.png'")
         print(f"  Harmonics plotted: {plotted_harmonics}")
         print(f"  RPM range: {rpm_range[0]:.1f} - {rpm_range[1]:.1f}")
 
+        # --- Plot Eigenmodes ---
+        print("\n" + "="*60)
+        print("Generating Eigenmodes Plot...")
+        print("="*60)
+        try:
+            plt.figure(figsize=(10, 8))
+            plt.show = lambda: None
+            plot_tools.plot_eigenmodes(modes=min(4, assembly.dofs))
+            plt.savefig('eigenmodes_plot.png', dpi=150, bbox_inches='tight')
+            plt.show = old_show
+            plt.close()
+            print(f"  Eigenmodes plot saved to 'eigenmodes_plot.png'")
+        except NotImplementedError:
+            print(f"  Note: Eigenmode plotting not supported for geared assemblies")
+            print(f"  Skipping eigenmodes plot...")
+
         # --- Calculate Natural Frequencies ---
+        print("\n" + "="*60)
+        print("Natural Frequencies")
+        print("="*60)
         wn, wd, damping_ratios = assembly.modal_analysis()
-        
-        # Filter out rigid body modes (frequencies near zero)
-        natural_freqs_rad_s = wn[wn > 1e-3]
-        natural_freqs_hz = sorted(list(natural_freqs_rad_s / (2 * np.pi)))[:5]
-        
-        print(f"  Calculated Natural Frequencies (Hz): {[float(f'{f:.2f}') for f in natural_freqs_hz]}")
+
+        # Filter out rigid body modes (frequencies near zero) and numerical artifacts (> 10 kHz)
+        natural_freqs_rad_s = wn[(wn > 1e-3) & (wn < 10000 * 2 * np.pi)]
+        natural_freqs_hz = sorted(list(natural_freqs_rad_s / (2 * np.pi)))
+
+        print(f"\nPhysical Natural Frequencies (Hz):")
+        for i, freq in enumerate(natural_freqs_hz, 1):
+            print(f"  f{i} = {freq:.2f} Hz")
 
 
         # --- Save results to JSON ---
