@@ -3,7 +3,7 @@ import numpy as np
 def to_python(obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, np.generic):  # e.g. np.float64, np.int32
+        elif isinstance(obj, np.generic): 
             return obj.item()
         elif isinstance(obj, dict):
             return {k: to_python(v) for k, v in obj.items()}

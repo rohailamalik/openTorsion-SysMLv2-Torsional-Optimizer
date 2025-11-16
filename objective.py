@@ -1,74 +1,71 @@
-from utils import to_python
 import numpy as np
-from system import System
-
-w_operation = 314
-
-def find_natural_freqs(assembly, harmonics) -> dict:
-    wn, _, _ = assembly.modal_analysis()
-    f_natural = wn / (2*np.pi) # convert from rad/s to Hz
-
-    # Calculate distance b/w each natural and forced frequency
-    diffs = np.abs(f_natural[:, None] - harmonics[None, :])
-    diffs = to_python(np.sort(diffs, axis=None))
-
-    return f_natural, min(diffs)
+from system import System, ValidationError
+from opentorsion.excitation import PeriodicExcitation
 
 
-def find_ss_response(
-        assembly, 
-        w_operation: float, # in rad/s
-        excitation_matrix: np.array, 
-        harmonics: np.array, # in Hz
-        steps: int = 200):
+def calculate_natural_freqs(system: System) -> np.array:
+    assembly = system.get_assembly()
+    wn, wd, zeta = assembly.modal_analysis()
+    if np.any(zeta < 0):
+        raise ValidationError("System has a negative damping ratio and is dynamically unstable.")
+    return wn[wd > 0] # ignore freqs which are non oscillating
+
+
+def calculate_vibratory_torque(system: System, steps: int = None) -> np.array:
+    """Calculates vibratory torque for all shafts, in a given range of speeds"""
+    assembly = system.get_assembly()
+    amplitudes, phases, modes = system.get_excitation_data()
+    speed = system.get_speeds(steps=steps)
+
+    amplitudes = np.asarray(amplitudes)
+    phases = np.asarray(phases)
+    modes = np.asarray(modes)
+
+    dofs = assembly.M.shape[1]
+    num_shafts = len(system.assembly.shaft_elements)
+
+    T_vib_for_all_speeds = np.zeros((num_shafts, len(speed)))
     
-    ss_torque_resp = {}
 
-    t = np.linspace(0, 2 * np.pi / w_operation, steps) 
+    for i, w in enumerate(speed):
+        omegas = w * modes
+        excitation = PeriodicExcitation(dofs, omegas)
 
-    # get steady-state response
-    q_res, _ = assembly.ss_response(excitation_matrix, harmonics)
-    q_difference = (q_res.T[:, 1:] - q_res.T[:, :-1]).T
-    stiffnesses = [shaft.k for shaft in assembly.shaft_elements]
-    max_torque = []
+        for node in range(dofs):
+            excitation.add_sines(node, omegas, amplitudes[node], phases[node])
 
-    for n, _ in enumerate(stiffnesses):
-        ss_torque_resp[f"shaft_{n}"] = {}
+        _, T_vib = system.assembly.vibratory_torque(excitation)
+        T_vib_for_all_speeds[:, i] = T_vib
 
-        shaft_response = q_difference[n]
-        sum_wave = np.zeros_like(t)
-        
-        for i, (response_component, harmonic) in enumerate(zip(shaft_response, harmonics)):
-            this_wave = np.real(response_component * np.exp(1j * harmonic * w_operation * t))
-            sum_wave += this_wave
-            ss_torque_resp[f"shaft_{n}"][f"harmonic_{i}"] = this_wave
+    return T_vib_for_all_speeds # rows are shafts, columns speed
 
-        max_torque.append(max(sum_wave))
-        
-        ss_torque_resp[f"shaft_{n}"]["total"] = sum_wave
 
-    ss_torque_resp = to_python(ss_torque_resp)
-    max_torque = to_python(max_torque)
-
-    return ss_torque_resp, min(max_torque)
+def calculate_total_inertia(system: System) -> float:
+    assembly = system.get_assembly()
+    return (
+        sum(d.I for d in assembly.disk_elements) +
+        sum(s.mass for s in assembly.shaft_elements) +
+        sum(g.I for g in assembly.gear_elements)
+    )
 
 
 def default_obj_function(system: System) -> dict:
-    assembly = system.get_assembly()
-    excitation_matrix, harmonics = system.get_excitation_matrix()
 
-    excitation_matrix = np.asarray(excitation_matrix)
-    harmonics = np.asarray(harmonics)
+    speed = system.get_speeds()
 
-    f_natural, min_diff = find_natural_freqs(assembly, harmonics)
-    ss_torque_resp, max_torque = find_ss_response(assembly, w_operation, excitation_matrix, harmonics)
+    T_vib_for_all_speeds = calculate_vibratory_torque(system)
+    T_vib_max = np.max(T_vib_for_all_speeds)
+    T_vibs = {}
 
-    return { # only first two (i.e. float/int) will be used in optimization, rest only for documenting results
-        "min_diff_bw_fn_ff": min_diff,
-        "max_torque_vibration": max_torque,
-        "natural_frequencies": f_natural,
-        "torque_response": ss_torque_resp
+    for i in range(T_vib_for_all_speeds.shape[0]):
+        T_vibs[f"shaft_{i}"] = T_vib_for_all_speeds[i,:]
+
+    I_total = calculate_total_inertia(system)
+    w_natural = calculate_natural_freqs(system)
+    
+    return {
+        "objectives": [T_vib_max, I_total],
+        "natural freqs (rad/s)": w_natural,
+        "speeds (rad/s)": speed,
+        "vibratory torque (Nm)": T_vibs
     }
-
-
-

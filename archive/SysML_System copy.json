@@ -1,0 +1,142 @@
+{
+  "name": "Drivetrain System Template - Small-Scale Testbench",
+  "date": "2025-10-13T12:00:00.000000Z",
+  "components": [
+    
+    { 
+      "name": "Motor",
+      "type": "Actuator",
+      "parameters": {
+        "inertia": {
+          "value": 7.94e-4,
+          "units": "kgm^2"
+        },
+        "damping": {
+          "value": 8.08,
+          "units": "Ns/m"
+        },
+        "stiffness": {
+          "value": 1.9e5,
+          "units": "N/m"
+        },
+        "speed": {
+          "value": {"min": 0.0, "max": 209},
+          "units": "rad/s"
+        },
+        "excitation": {
+        "type": "excitationHarmonic",
+        "value": [[6, 100.0, 0], [12, 50.0, 0]]
+        }
+      }
+    },
+
+    {
+      "name": "Coupling",
+      "type": "Coupling",
+      "parameters": {},
+      "choices": [ 
+        {
+          "name": "model_A",
+          "parameters": {
+            "inertia": { 
+            "value": 5.65e-5,
+            "units": "kgm^2"
+            },
+            "damping": {
+              "value": 1.78,
+              "units": "Ns/m"
+            },
+            "stiffness": {
+              "value": 4.19e4,
+              "units": "N/m"
+            }
+          }
+        },
+
+        {
+          "name": "model_B",
+          "parameters": {
+            "inertia": { 
+            "value": 2e-5,
+            "units": "kgm^2"
+            },
+            "damping": {
+              "value": 1.00,
+              "units": "Ns/m"
+            },
+            "stiffness": {
+              "value": 3e4,
+              "units": "N/m"
+            }
+          }
+        }
+      ]  
+    },
+
+    {
+      "name": "Propeller_Shaft",
+      "type": "Shaft",
+      "parameters": {
+        "length": {
+          "options": [0.3, 0.45, 0.6], 
+          "units": "m"
+        },
+        "diameter": { 
+          "options": {"min": 0.02, "max": 0.06}, 
+          "units": "m"
+        }
+      },
+      "choices": [ 
+        {
+          "name": "Aluminum",
+          "parameters": {
+            "density": {
+              "value": 2.7e3,
+              "units": "kg/m^3"
+            },
+            "shear_modulus": {
+              "value": 27e9,
+              "units": "Pa"
+            }
+          }
+        },
+        {
+          "name": "Steel",
+          "parameters": {
+            "density": {
+              "value": 7.85e3,
+              "units": "kg/m^3"
+            },
+            "shear_modulus": {
+              "value": 80e9,
+              "units": "Pa"
+            }
+          }
+        }
+      ]
+    },
+
+
+    {
+      "name": "Propeller",
+      "type": "Rotor",
+      "parameters": {
+        "inertia": {
+          "value": 4.95e-2,
+          "units": "kgm^2"
+        },
+        "damping": { 
+          "value": 0.24,
+          "units": "Ns/m"
+        },
+        "stiffness": {
+          "value": 3e4,
+          "units": "N/m"
+        }
+      }
+    }
+  ],
+
+  "any_other_system_attributes_or_parameters": "whatever"
+
+}
