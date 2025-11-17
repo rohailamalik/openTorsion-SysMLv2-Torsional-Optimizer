@@ -1,6 +1,6 @@
 # openTorsion-Based Torsional Analysis System Optimizer with SysML Integration
 
-This repository provides a multi-objective, mixed-variable genetic-algorithm optimizer built on the openTorsion Python library. It can ingest SysML-derived system descriptions (JSON), extract all available design variables, discretize the system into an openTorsion-compatible model, and evaluate it using a custom objective function.
+This repository provides a multi-objective, mixed-variable genetic-algorithm optimizer built on the [openTorsion](https://github.com/Aalto-Arotor/openTorsion) library. It can ingest SysML-derived system descriptions (JSON), extract all available design variables, discretize the system into an openTorsion-compatible model, and evaluate it using a custom objective function.
 
 The system JSON input must follow specific structural rules so the parser can correctly interpret and discretize the model. See `models/base_model.json` for a fully worked example.
 
