@@ -2,7 +2,7 @@ from pymoo.core.problem import ElementwiseProblem
 from pymoo.optimize import minimize
 from pymoo.core.mixed import MixedVariableGA
 from pymoo.algorithms.moo.nsga2 import RankAndCrowdingSurvival
-from system import System, ValidationError
+from parser import System, ValidationError
 from pathlib import Path
 from typing import Callable, Union
 import json

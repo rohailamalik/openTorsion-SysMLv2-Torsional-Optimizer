@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Tuple, Dict, Any
 from utils import to_python
-from system import System, ValidationError
+from parser import System, ValidationError
 
 
 # Constants

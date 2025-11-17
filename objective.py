@@ -1,6 +1,8 @@
 import numpy as np
-from system import System, ValidationError
 from opentorsion.excitation import PeriodicExcitation
+
+from parser import System, ValidationError
+from utils import to_python
 
 
 def calculate_natural_freqs(system: System) -> np.array:
@@ -55,13 +57,21 @@ def default_obj_function(system: System) -> dict:
 
     T_vib_for_all_speeds = calculate_vibratory_torque(system)
     T_vib_max = np.max(T_vib_for_all_speeds)
+    I_total = calculate_total_inertia(system)
+    w_natural = calculate_natural_freqs(system)
+
+    #system_json = system.get_system_json()
+    #limit = system_json["components"][1]["parameters"]["continuousVibratoryTorque"]["value"]
+    #limit = to_python(limit)
+    #if T_vib_max >= limit:
+    #    # Incurr high cost since this coupling cant handle this much torque
+    #    T_vib_max = 1e12
+    #    I_total = 1e12
+
     T_vibs = {}
 
     for i in range(T_vib_for_all_speeds.shape[0]):
         T_vibs[f"shaft_{i}"] = T_vib_for_all_speeds[i,:]
-
-    I_total = calculate_total_inertia(system)
-    w_natural = calculate_natural_freqs(system)
     
     return {
         "objectives": [T_vib_max, I_total],
