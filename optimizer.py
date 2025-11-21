@@ -2,12 +2,13 @@ from pymoo.core.problem import ElementwiseProblem
 from pymoo.optimize import minimize
 from pymoo.core.mixed import MixedVariableGA
 from pymoo.algorithms.moo.nsga2 import RankAndCrowdingSurvival
-from parser import System, ValidationError
+from adapter import SystemAdapter, ValidationError
 from pathlib import Path
 from typing import Callable, Union
 import json
 from objective import default_obj_function
 from utils import to_python
+from pymoo.termination.default import DefaultMultiObjectiveTermination
 
 
 class Optimizer:
@@ -19,8 +20,8 @@ class Optimizer:
     a custom objective function.
 
     Args:
-        system: System class representation of a SysML system
-        obj_function: Function taking a System and returning a dict of outputs.
+        system: SystemAdapter class representation of a SysML system
+        obj_function: Function taking a SystemAdapter and returning a dict of outputs.
             All objectives to be used in optimization must be returned as a list in "objectives" key.
             The rest will be logged to the results but not passed to algorithm.
         folder_for_results: Directory for optimization results (default: "./results")
@@ -40,7 +41,7 @@ class Optimizer:
 
     def __init__(
         self,
-        system: System,
+        system: SystemAdapter,
         obj_function: Callable = default_obj_function,
         folder_for_results: Union[str, Path] = "./results",
         num_objectives: int = 2,
@@ -67,6 +68,7 @@ class Optimizer:
         self.verbose = verbose
 
         self._setup_result_paths(folder_for_results)
+        self.res = None
         
         self.opt_history = []
         self.final_results = []
@@ -76,7 +78,7 @@ class Optimizer:
         design_vars = system.get_design_vars()
         if not design_vars:
             raise ValueError("No design variables found in system. Cannot optimize.")
-
+        
         self.algorithm = MixedVariableGA(
             pop_size=self.num_populations,
             survival=RankAndCrowdingSurvival()
@@ -119,29 +121,33 @@ class Optimizer:
             )
         return [1 if m else -1 for m in minimize_mask]
 
-    def run(self) -> None:
-        """Execute the optimization and save results."""
-
+    def run(self):
+        """Runs the optimization process"""
         print(f"Starting optimization of '{self.system.name}'...")
 
-        minimize(
+        termination = DefaultMultiObjectiveTermination(
+        ftol=0.01,
+        period=30,
+        n_max_gen=self.num_generations)
+
+        self.res=minimize(
             self.problem,
             self.algorithm,
-            ("n_gen", self.num_generations),
+            termination=termination,
             seed=self.random_seed,
-            verbose=self.verbose
+            verbose=self.verbose,
+            save_history=True
         )
 
-        # convert to python types to ensure serialization
-        self.opt_history = to_python(self.problem.results) 
+        # save results (same as before)
+        self.opt_history = to_python(self.problem.results)
         self.final_results = self.opt_history[-self.num_populations:]
-
         self._save_json(self.opt_history_path, self.opt_history)
         self._save_json(self.final_results_path, self.final_results)
 
-        print(f"Optimization complete!")
-        print(f"Full history saved to: {self.opt_history_path}")
+        print("Optimization complete!")
         print(f"Final results saved to: {self.final_results_path}")
+        print(f"Optimization history saved to: {self.opt_history_path}")
 
     def save_optimized_system(self, candidate_index: int) -> None:
         """
@@ -184,7 +190,7 @@ class VibrationOptimizationProblem(ElementwiseProblem):
     def __init__(
         self,
         design_vars: dict,
-        system: System,
+        system: SystemAdapter,
         obj_func: Callable,
         n_obj: int,
         minimize_mask: list[int]
@@ -214,13 +220,15 @@ class VibrationOptimizationProblem(ElementwiseProblem):
         candidate_name = f"{self.system.name}_candidate_{self._eval_counter}"
         self._eval_counter += 1
 
+        F = [r * m for r, m in zip(results_for_GA, self.minimize_mask)]
+
         self.results.append({
             "candidate": candidate_name,
             "design_vars": x,
-            "results": full_result
+            "results": full_result,
         })
 
-        out["F"] = [r * m for r, m in zip(results_for_GA, self.minimize_mask)]
+        out["F"] = F
 
     def _run_obj_func(self) -> tuple:
 

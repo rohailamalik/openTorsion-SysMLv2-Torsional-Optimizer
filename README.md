@@ -25,8 +25,8 @@ The system JSON input must follow specific structural rules so the parser can co
 
 ## Code Overview
 
-1. `parser.py`: Reads JSON, discretizes, extracts design variables, and writes optimized values back.
-2. `optimizer.py`: GA engine. Stores history and final solutions and can merge results back into the original JSON. 
+1. `adapter.py`: Reads JSON, discretizes, extracts design variables, and writes optimized values back.
+2. `optimizer.py`: GA engine. Stores history and final solutions and can merge results back into the original JSON.
 3. `objective.py`: The default objective function. Computes maximum vibratory torque and total inertia; the optimizer minimizes this.
 
 ## Installation
@@ -47,6 +47,6 @@ pip install -r requirements.txt
 
 ## Usage
 
-1. Create a `System` instance with JSON path or dictionary.
+1. Create a `SystemAdapter` instance with JSON path or dictionary.
 2. Create an `Optimizer` instance and assign parser + objective.
 3. Run with the `.run()` method.

@@ -1,11 +1,11 @@
 import numpy as np
 from opentorsion.excitation import PeriodicExcitation
 
-from parser import System, ValidationError
+from adapter import SystemAdapter, ValidationError
 from utils import to_python
 
 
-def calculate_natural_freqs(system: System) -> np.array:
+def calculate_natural_freqs(system: SystemAdapter) -> np.array:
     assembly = system.get_assembly()
     wn, wd, zeta = assembly.modal_analysis()
     if np.any(zeta < 0):
@@ -13,69 +13,82 @@ def calculate_natural_freqs(system: System) -> np.array:
     return wn[wd > 0] # ignore freqs which are non oscillating
 
 
-def calculate_vibratory_torque(system: System, steps: int = None) -> np.array:
+def calc_objectives(system: SystemAdapter, steps: int = None) -> np.array:
     """Calculates vibratory torque for all shafts, in a given range of speeds"""
     assembly = system.get_assembly()
-    amplitudes, phases, modes = system.get_excitation_data()
+    amplitudes, phases, orders = system.get_excitation_data()
     speed = system.get_speeds(steps=steps)
 
     amplitudes = np.asarray(amplitudes)
     phases = np.asarray(phases)
-    modes = np.asarray(modes)
+    orders = np.asarray(orders)
 
     dofs = assembly.M.shape[1]
     num_shafts = len(system.assembly.shaft_elements)
 
-    T_vib_for_all_speeds = np.zeros((num_shafts, len(speed)))
-    
+    T_vib = np.zeros((num_shafts, len(speed)), dtype=float)
+    P_loss = np.zeros(len(speed), dtype=float)
 
     for i, w in enumerate(speed):
-        omegas = w * modes
+
+        omegas = w * orders
         excitation = PeriodicExcitation(dofs, omegas)
 
         for node in range(dofs):
             excitation.add_sines(node, omegas, amplitudes[node], phases[node])
 
-        _, T_vib = system.assembly.vibratory_torque(excitation)
-        T_vib_for_all_speeds[:, i] = T_vib
+        _, w_res = assembly.ss_response(excitation.U, excitation.omegas)
+        _, T_vib_sys = system.assembly.vibratory_torque(excitation)
+        P_loss_sys = 0.5 * np.real(np.sum( np.conj(w_res) * (assembly.C @ w_res), axis=0 )).sum() 
+        
+        T_vib[:, i] = T_vib_sys
+        P_loss[i] = P_loss_sys
 
-    return T_vib_for_all_speeds # rows are shafts, columns speed
-
-
-def calculate_total_inertia(system: System) -> float:
-    assembly = system.get_assembly()
-    return (
-        sum(d.I for d in assembly.disk_elements) +
-        sum(s.mass for s in assembly.shaft_elements) +
-        sum(g.I for g in assembly.gear_elements)
-    )
+    return T_vib, P_loss
 
 
-def default_obj_function(system: System) -> dict:
+def default_obj_function(system: SystemAdapter) -> dict:
+    speed = np.asarray(system.get_speeds())
+    T_vib, P_loss = calc_objectives(system)
 
-    speed = system.get_speeds()
+    steady_mask = speed >= 125 # operating speed
 
-    T_vib_for_all_speeds = calculate_vibratory_torque(system)
-    T_vib_max = np.max(T_vib_for_all_speeds)
-    I_total = calculate_total_inertia(system)
+    # Global maxima
+    T_vib_max = T_vib.max()
+    P_loss_max = P_loss.max()
+
+    # Steady-state maxima 
+    T_vib_ss_max = T_vib[:, steady_mask].max()
+    P_loss_ss_max = P_loss[steady_mask].max()
+
+    # Natural frequencies
     w_natural = calculate_natural_freqs(system)
 
-    #system_json = system.get_system_json()
-    #limit = system_json["components"][1]["parameters"]["continuousVibratoryTorque"]["value"]
-    #limit = to_python(limit)
-    #if T_vib_max >= limit:
-    #    # Incurr high cost since this coupling cant handle this much torque
-    #    T_vib_max = 1e12
-    #    I_total = 1e12
+    # Torque per shaft
+    T_vib_per_shaft = {f"shaft_{i}": T_vib[i] for i in range(T_vib.shape[0])}
 
-    T_vibs = {}
+    # Coupling 
+    T_cpl = T_vib_per_shaft["shaft_1"]
+    T_cpl_max = T_cpl.max()
+    T_cpl_ss_max = T_cpl[steady_mask].max()
 
-    for i in range(T_vib_for_all_speeds.shape[0]):
-        T_vibs[f"shaft_{i}"] = T_vib_for_all_speeds[i,:]
-    
+    # Limits
+    coupling = system.get_system_json()["components"][1]["parameters"]
+    ss_limit = to_python(coupling["continuousVibratoryTorque"]["value"])
+    res_limit = to_python(coupling["maxTorque"]["value"])
+
+    # Penalty if limit breached
+    if T_cpl_max >= res_limit or T_cpl_ss_max > ss_limit:
+        T_vib_ss_max = 1e12
+        P_loss_ss_max = 1e12
+
     return {
-        "objectives": [T_vib_max, I_total],
-        "natural freqs (rad/s)": w_natural,
-        "speeds (rad/s)": speed,
-        "vibratory torque (Nm)": T_vibs
+        "objectives": [T_vib_ss_max, P_loss_ss_max],
+        "max_Tvib": T_vib_max,
+        "max_Tvib_ss": T_vib_ss_max,
+        "max_P_loss": P_loss_max,
+        "max_P_loss_ss": P_loss_ss_max,
+        "natural_freqs_rad_s": w_natural,
+        "speeds_rad_s": speed,
+        "vibratory_torque_Nm": T_vib_per_shaft,
     }

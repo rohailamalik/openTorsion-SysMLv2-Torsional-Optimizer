@@ -14,7 +14,7 @@ class ValidationError(Exception):
     """Custom exception class for catching cases where the assembled system is not solveable etc."""
     pass
 
-class System:
+class SystemAdapter:
     """Class for storing and managing systems between openTorsion and JSON"""
     
     def __init__(self, model: dict = None, model_path: str | Path = None):
