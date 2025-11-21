@@ -1,17 +1,17 @@
 # openTorsion-Based Torsional Analysis System Optimizer with SysML Integration
 
-This repository provides a multi-objective, mixed-variable genetic-algorithm optimizer built on the openTorsion Python library. It can ingest SysML-derived system descriptions (JSON), extract all available design variables, discretize the system into an openTorsion-compatible model, and evaluate it using a custom objective function.
+This repository provides a multi-objective, mixed-variable genetic-algorithm optimizer built on the [openTorsion](https://github.com/Aalto-Arotor/openTorsion) library. It can ingest SysML-derived system descriptions (JSON), extract all available design variables, discretize the system into an openTorsion-compatible model, and evaluate it using a custom objective function.
 
 The system JSON input must follow specific structural rules so the parser can correctly interpret and discretize the model. See `models/base_model.json` for a fully worked example.
 
 ## JSON Structure Requirements
 
-1. The root object must be a dictionary containing a \"components\" list.
-2. Each entry in `"components\"` must be a component dictionary.
-3. Each component must define a `\"type\"` field. Valid types include: Actuator, Rotor, Coupling, Disk, Shaft, Gear, Gear_Set.
-4. Each component must contain a `\"parameters\"` dictionary. Each parameter is a dictionary with `\"value\"` and `\"units\"` and/or `\"options\"` with discrete values (list) or a range (dict with `\"min\"` and/or `\"max\`").
-5. Components may define design-choice variants in a `\"choices\"` list. Each entry contains a `\"parameters\"` dictionary and optionally a `\"name\"`.
-6. Speed and excitation may also be defined. Speed may be a fixed number, list, or range dict. Only one component may define speed. Excitation must be a list of excitations, each `[order, amplitude, phase]`.
+1. The root object must be a dictionary containing a `"components"` list.
+2. Each entry in `"components"` must be a component dictionary.
+3. Each component must define a `"type"` field. Valid types include: Actuator, Rotor, Coupling, Disk, Shaft, Gear, Gear_Set.
+4. Each component must contain a `"parameters"` dictionary. Each parameter is a dictionary with `"value"` and `"units"` and/or `"options"` with discrete values (list) or a range (dict with `"min"` and/or `"max`").
+5. Components may define design-choice variants in a `"choices"` list. Each entry contains a `"parameters"` dictionary and optionally a `"name"`.
+6. Speed and excitation may also be defined. Speed may be a fixed number, a list, or a range dictionary. Only one component may define speed. Excitation must be a list of excitations, each `[order, amplitude, phase]`.
 
 ## Discretization Rules
 
@@ -25,9 +25,15 @@ The system JSON input must follow specific structural rules so the parser can co
 
 ## Code Overview
 
+<<<<<<< HEAD
 1. `adapter.py`: Reads JSON, discretizes, extracts design variables, and writes optimized values back.
 2. `optimizer.py`: GA engine. Stores history and final solutions and can merge results back into the original JSON.
 3. `objective.py`: The default objective function. Computes maximum vibratory torque and total inertia; the optimizer minimizes this.
+=======
+1. `parser.py`: Reads JSON, discretizes, extracts design variables, and writes optimized values back.
+2. `optimizer.py`: GA engine. Stores history and final solutions and can merge results back into the original JSON. 
+3. `objective.py`: The default objective function. Computes the maximum vibratory torque and total inertia; the optimizer then minimizes these values.
+>>>>>>> 80e9b7c205585cf2e0a9d69583add1b2005fb076
 
 ## Installation
 
