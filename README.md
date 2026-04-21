@@ -56,7 +56,7 @@ pip install -r requirements.txt
 If you use this repository in your research, please cite:
 
 ```bibtex
-@inproceedings{alshami2026sysml,
+@inproceedings{malik2026sysmlv2opentorsion,
   title={Model-Based Design of Marine Powertrains: Integrating Coupling Selection with Torsional Analysis},
   author={Malik, Rohail and Al-Shami, Haitham and Ala-Laurinaho, Riku and Viitala, Raine and Veps{\"a}l{\"a}inen, Jari},
   booktitle={Proceedings of the 12th IFToMM International Conference on Rotordynamics},
