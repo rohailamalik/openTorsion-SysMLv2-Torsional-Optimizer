@@ -50,3 +50,19 @@ pip install -r requirements.txt
 1. Create a `SystemAdapter` instance with JSON path or dictionary.
 2. Create an `Optimizer` instance and assign parser + objective.
 3. Run with the `.run()` method.
+
+## Citation
+
+If you use this repository in your research, please cite:
+
+```bibtex
+@inproceedings{alshami2026sysml,
+  title={Model-Based Design of Marine Powertrains: Integrating Coupling Selection with Torsional Analysis},
+  author={Malik, Rohail and Al-Shami, Haitham and Ala-Laurinaho, Riku and Viitala, Raine and Veps{\"a}l{\"a}inen, Jari},
+  booktitle={Proceedings of the 12th IFToMM International Conference on Rotordynamics},
+  year={2026},
+  address={Lahti, Finland},
+  month={June},
+  date={23}
+}
+```
